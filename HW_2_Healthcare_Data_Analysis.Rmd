@@ -1,0 +1,841 @@
+---
+title: "Homework_2 :Working With Healthcare Data"
+author: "Pavithra Senthilkumar"
+date: "2024-02-08"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+# DATA LOADING AND CLEANING
+
+## Q_1.1 Getting the working Directory:
+
+```{r}
+getwd()
+```
+## Setting up Working directory:
+
+```{r}
+setwd("C:/Users/Pavithra/Documents/Notebooks/RScripts")
+```
+
+## Reading the Dataset:
+
+```{r}
+
+data <-read.csv("synthetic_health_data.csv",sep=",")
+
+```
+## Q_1.2 Printing data
+
+```{r}
+head(data)
+
+```
+## Dimensions of the Data:
+
+```{r}
+dim(data)
+```
+
+The dataset has 1000 entries/rows and has 8 features/columns.
+
+```{r}
+
+summary(data)
+
+```
+It is noted that there are 4 numeric variables and 4 character variables in the dataset.
+
+The average age of the population is 53.68, with older people belonging to 90 years, and the younger people belonging to 18 years of age.
+
+
+```{r}
+
+str(data)
+
+```
+Integer Variables in Data :
+PatientID,Age,BloodPressure,Cholesterol
+
+Character Variables in Data:
+Sex, Diabetes, SmokingStatus,HeartDisease
+
+## Q_1.3 Identifying Missing Values
+
+This approach loops over each column and the function is.na() returns the missing values count.
+
+```{r}
+for(i in 1:length(data))
+{
+  print(which(is.na(data[i])))
+}
+
+```
+There are no missing values in the dataset.
+
+## Q_1.4 Converting Categorical to Factor Variables:
+
+The character variables that are categorical are converted to factors using the lapply & sapply functions.
+
+```{r}
+cols<-c("Sex","Diabetes","SmokingStatus","HeartDisease")
+
+data[cols]<-lapply(data[cols],factor)
+
+sapply(data,class)
+```
+## Encoding Variables to numeric:
+
+Since the categorical variables are in character categories, encoding them to numeric would be easier for further numerical analysis.
+
+### Encoding Sex by creating a new column Gender
+
+Having Females as 1 and males as 0.
+
+```{r}
+
+data$Gender<- data$Sex
+data$Gender<-as.character(data$Gender)
+
+data$Gender[data$Gender=="Female"] <- 1
+data$Gender[data$Gender=="Male"] <- 0
+
+data$Gender<-as.numeric(data$Gender)
+```
+
+### Encoding Diabetes
+
+Absence of diabetes is marked as 0, presence as 1.
+
+```{r}
+
+
+data$Diabetes<-as.character(data$Diabetes)
+data$Diabetes[data$Diabetes=="No"] <-0
+data$Diabetes[data$Diabetes=="Yes"] <-1
+
+data$Diabetes<-as.numeric(data$Diabetes)
+
+```
+
+
+### Encoding Heart Disease
+
+Absence of diabetes is marked as 0, presence as 1.
+
+```{r}
+
+data$HeartDisease<-as.character(data$HeartDisease)
+data$HeartDisease[data$HeartDisease=="No"] <-0
+data$HeartDisease[data$HeartDisease=="Yes"] <-1
+
+data$HeartDisease<-as.numeric(data$HeartDisease)
+
+head(data)
+
+```
+
+### Checking Distinct values in SmokingStatus Column:
+
+```{r}
+sort(unique(data$SmokingStatus),decreasing=TRUE)
+```
+
+### Encoding Smoking Status:
+
+Creating different columns for each smoking category.
+
+```{r}
+
+library(dplyr)
+
+data<- data %>%
+  
+  mutate(Smoker = ifelse(SmokingStatus == "Smoker", 1, 0),
+         Non_Smoker = ifelse(SmokingStatus=="Non-Smoker",1,0),
+         Former_Smoker = ifelse(SmokingStatus=="Former Smoker",1,0))
+
+```
+
+
+### Converting Columns to integer types:
+
+```{r}
+data$Gender <-as.integer(data$Gender)
+data$Diabetes <-as.integer(data$Diabetes)    
+data$HeartDisease <-as.integer(data$HeartDisease)
+data$Smoker<-as.integer(data$Smoker)
+data$Non_Smoker<-as.integer(data$Non_Smoker)
+data$Former_Smoker<-as.integer(data$Former_Smoker)
+
+str(data)
+```
+
+
+```{r}
+head(data)
+```
+
+
+### Selecting/Creating only numeric columns data:
+
+```{r}
+data_numeric<-data[,c("Age","Gender","Diabetes",
+  "HeartDisease","Smoker","Non_Smoker","Former_Smoker",
+  "Cholesterol","BloodPressure")]
+
+```
+
+# Data Exploration and Transformation
+
+## Q_2.1 Creating a new HighBP Column:
+
+Creating a new variable named HighBP that has an indication of high bloodpressure level.
+
+```{r}
+
+library(dplyr)
+
+upper_quantile_Bp<-quantile(data$BloodPressure,0.75)
+
+data_numeric<- data_numeric %>%
+  
+  mutate(HighBP = ifelse(BloodPressure>=upper_quantile_Bp, 1, 0))
+
+head(data_numeric)
+
+```
+
+The threshold chosen to indicate a High Blood Pressure is the upper Quartile (Q3), which represents values that are 75th percentile and more. For which, the values are above the median and mean value of Bloodpressure. 
+
+
+
+## Q_2.2 Histogram for Cholesterol,
+
+```{r}
+
+hist(data_numeric$Cholesterol, xlab="Cholesterol Levels",breaks=30)
+
+```
+
+The distribution of cholestrol levels follows a Normal Distribution. The median value lies around 200.
+
+The bin size or breaks was chosen as 30, since it could accommodate more entries together and gives a big picture of whole population.
+
+
+## Histogram for Blood Pressure,
+
+```{r}
+
+hist(data_numeric$BloodPressure, xlab="Blood Pressure",breaks=20)
+
+```
+
+The distribution of Blood Pressure also follows a Normal Distribution. The median value lies around 120.
+
+The bin size or breaks was chosen as 20, since it could accommodate more entries together and gives a big picture of whole population.
+
+By having the bin size as 20, the histogram is not limited to the amount of individual points it could represent.
+
+This bin size gives a better representation of the population's Blood Pressure.
+
+
+### Examining with Boxplots,
+
+
+```{r}
+boxplot(data_numeric$Age, xlab="Age")
+```
+
+The median age or the 50th percentile happens to be around 53, with lower quartile around 35 years and upper quartile around 71.
+
+There are no outliers in this column.
+
+### Boxplot for BloodPressure
+
+```{r}
+
+boxplot(data_numeric$BloodPressure, xlab="BloodPressure")
+
+```
+
+The blood pressure has a narrow IQR, with lower quartile of 109 and upper quartile of 129. 
+
+The data has outliers/extreme values in both beyond the upper and lower regions of the quartiles.
+
+Extreme values with Highest BP value of : 178
+Lowest BP value of : 63
+
+### Boxplot for Cholesterol
+
+```{r}
+
+boxplot(data_numeric$Cholesterol, xlab="Cholesterol")
+
+```
+
+The average value of the cholestrol is nearly 200, with lower quartile of 122 and upper quartile of 220. 
+
+The cholestrol variable too has extreme values too, with lowest value being 112 and highest being 283.
+
+
+## Q_2.3 Scatter Plots to understand relationship between variables
+
+### Cholesterol Vs BloodPressure
+
+```{r}
+
+
+cholest_scat<-data_numeric$Cholesterol
+bloodpressure_scat <-data_numeric$BloodPressure
+
+
+plot(cholest_scat,bloodpressure_scat,main="Scatter Plot",xlab="Cholestrol",ylab="BloodPressure",col=c("blue","red"))
+
+
+```
+As indicated by the plot the relationship between cholesterol and blood pressure is slightly inversely correlated.
+
+The blue dots (Cholesterol) in the left is higher and towards the right the cholesterol reduces and blood pressure increases. 
+
+```{r}
+
+print(cor(data_numeric$BloodPressure,data_numeric$Cholesterol))
+
+```
+
+Also the correlation coefficient, it is assumed that these two variables have a negative correlation of -0.03.
+
+Since the cholesterol and bloodpressure should be positively correlated in reality, which could be due to the outliers
+
+### Pairs Plot
+
+```{r}
+
+pairs(data_numeric[,c("Cholesterol","BloodPressure","HeartDisease","Diabetes")],pch=20)
+
+```
+
+This plot gives the relationship plot between the blood pressure, cholesterol, heartdisease and Smoker.
+
+## Examining two variables at a time for more clarity - Identifying linearly Correlated variables:
+
+### Distribution of Cholesterol Vs Presence of HeartDisease 
+
+```{r}
+boxplot(data_numeric$Cholesterol ~ HeartDisease, data = data_numeric)
+```
+It is noted that both the presence and absence of Heart Disease cohort has outliers. For population without the heart disease, it is seen that there are outliers in the lower extreme (less than minimum value). These population have a very low cholesterol level.
+The maximum value of cholesterol in people with heart disease is higher than those without.
+
+
+### Distribution of Cholesterol Vs Presence of Diabetes
+
+```{r}
+boxplot(data_numeric$Cholesterol ~ Diabetes, data = data_numeric)
+```
+It is seen that people with diabetes have no outliers in the levels of cholesterol, unlike those who don't have diabetes.
+People with diabetes are seen to have a higher Q3 values compared to those who don't have.
+The lower cholesterol levels are 128 and higher levels are 273, which is higher than the non diabetic cohort.
+
+
+
+### Smoking Vs Cholesterol Levels
+
+```{r}
+boxplot(data$Cholesterol ~ SmokingStatus, data = data)
+```
+It is noted that the smokers have extreme outliers with high levels of cholesterol. Also the smokers have a higher value of 50th percentile compared to the non-smokers and former smokers. Former-smokers do have a higher median cholesterol level compared to the non-smokers.
+
+So, Smoking and Cholesterol levels could be related.
+
+### Diabetes Vs Gender - How is it distributed across genders?
+
+```{r}
+mosaicplot(table(data_numeric$Gender, data_numeric$Diabetes),
+           color = c("skyblue", "lightgreen" ),xlab="Gender",ylab="Diabetes",
+           main = "Diabetes and Gender")
+
+```
+From the plot, it is seen that the majority proportion of people with diabetes are females.
+
+
+### Diabetes vs BloodPressure
+
+
+```{r}
+
+boxplot(data_numeric$BloodPressure ~ Diabetes, data = data_numeric)
+
+```
+The presence of diabetes does tend to show an impact on the blood pressure levels. With the presence of diabetes, the blood pressure average is higher. The minimum value of bloodpressure level is higher in cohorts with diabetes than without. There are also outliers beyond the maximum value.
+
+Diabetes are Bloodpressure could be related.
+
+### BloodPressure Vs Heart Disease
+
+```{r}
+boxplot(data_numeric$BloodPressure ~ HeartDisease, data = data_numeric)
+```
+Though, the absence of heartdisease cohort has outliers, the presence of heart disease shows a slightly higher lower quartile and a higher maximum levels of blood pressure. 
+
+Hence, bloodpressure could be an indicator of heart disease.
+
+### BloodPressure Vs Smoking Status
+
+```{r}
+boxplot(data$BloodPressure ~ SmokingStatus, data = data)
+```
+
+From the boxplot, it is seen that the smokers have a higher median compared to the non smoers and former smokers. the former smokers tend to show higher maximum levels of bloodpressure.
+
+So, smoking and Bloodpressure might have an influence on each other.
+
+
+The key variables/metrics with relationship are:
+
+* **Cholesterol** and BloodPressure -> Inversely Related
+* **Smoker** and cholesterol -> Positively related
+* **HeartDisease** and BloodPressure -> Positively related
+* **Gender** and Diabetes -> positively related, More Females are found to be diabetic.
+* **BloodPressure** and Smoker/ Former_Smoker-> Positively related
+
+
+## Q_1.2.4 Correlation between variables:
+
+```{r}
+cor_matrix<-cor(data_numeric,method="spearman")
+
+cor_matrix
+```
+
+```{r}
+heatmap(cor_matrix)
+```
+
+With the correlation coefficients and heatmap, it is seen that though the positive or negative relation is not that strong enough, there is a weak (positive or negative) relationship that exists among the key variables listed above.
+
+
+## Q_1.2.5 Creating a subset Data for Patients with Diabetes
+
+```{r}
+
+data_numeric_diab<- data_numeric[data_numeric$Diabetes==1,]
+
+head(data_numeric_diab)
+
+```
+
+```{r}
+summary(data_numeric_diab)
+```
+
+```{r}
+summary(data_numeric)
+```
+### Insights between Diabetes Vs Regular Cohort
+
+1. From the summaries, it is noted that the **population with diabetes, show a higher minimum level of bloodpressure**. 
+
+2. Likewise, the population with diabetes tend to show a **higher minimum cholesterol level and higher maximum cholesterol level compared to the whole population**.
+
+3. It is seen that the mean gender is higher for the diabetic population compared to overall gender mean; **which means more females have diabetes, than males**.
+
+4. Surprisingly, **people with diabetes, show less heart disease frequency** than people in the whole population.
+
+5. There are **more people with highBlood Pressure in the diabetes cohort**, than in the overall population.
+
+
+# Linear Regression Analysis
+
+## Q_2.1.1 Model Formulation - Fitting the linear Regression Model
+
+### Predicting BloodPressure
+
+From the correlation of variables, it is seen that the variables HighBP, HeartDisease, Smoker, Cholesterol, Diabetes shows a relation with the bloodpressure.
+
+* HighBP has higher correlation with Bloodpressure (Since it is a Derived Column)
+
+* HeartDisease has a positive correlation(though slightly but more compared to others) with bloodpressure.
+
+* Smoker has a positive correlation with Bloodpressure too.
+
+* Diabetes has the a very mild positive correlation of value 0.021 with Bloodpressure.
+
+* For this population. cholesterol has an inverse effect on the Bloodpressure, which could be a good representing factor
+
+Correlation levels with BloodPressure:
+
+* Gender : 0.020793084 
+* Diabetes : 0.021821438 
+* HeartDisease : 0.034335231 
+* Smoker : 0.033371776 
+* Non_Smoker : 0.031271380 
+* Former_Smoker : -0.062890021 
+* Cholesterol : -0.042353451 
+* BloodPressure : 1.000000000 
+* HighBP : 0.773561402 
+* Age : -0.003896019 
+
+
+## Q_2.1.2 Equation of the Model
+
+```{r}
+library(tinytex)
+```
+
+$$Y=b_0+b_1*(diabetes)+b_2*(heartdisease)+b_3*(smoker)+b_4*(cholesterol)+b_5*(highBP)+\varepsilon$$
+Y is the dependent variable that determines blood pressure. The b0 is the intercept, which is the value of the bloodpressure when all the other metrics are zero. 
+
+b1, b2, b3, b4 and b5 are the slopes(explains change in Y with unit change in the corresponding independent variable) or coefficients of the model.
+
+And epsilon is the error term associated with the model.
+
+## Q_2.1.3 What part of the model remains in knowable and unknowable world?
+
+Before fitting in the model, we have the information regarding the independent variables which we chose. Since this is present in the data, this is considered as the knowable information.
+However, te dependent variable's prediction from the model(model performance) is in the unknowable world.
+
+But Post fitting in the model, the parts of the model that are in the knowable world are:
+
+* Intercept
+* Slopes/coefficients
+* Y-> dependent variable(predictions)
+
+Parts of the model that are in the unknowable world are:
+
+* Errors/ Residuals (Difference between actual and predicted)
+* The overall population as a whole is unknown (we generally estimate the population using the current results)
+* Unseen Data that could affect dependent variable
+
+# Model Fitting and Interpretation
+
+## Q_2.2.1 Fit the linear model and show the summary
+
+```{r}
+model_1 <-lm(data_numeric$BloodPressure ~ data_numeric$Diabetes+
+             data_numeric$HeartDisease+
+             data_numeric$Smoker+
+             data_numeric$Cholesterol+
+             data_numeric$HighBP,
+           data=data_numeric) 
+summary(model_1)
+```
+
+### Plotting the Actual Vs Predicted
+
+```{r}
+
+pred <-predict(model_1)
+plot(data_numeric$BloodPressure,pred,xlab="Actual Values",
+     ylab="Predicted Values",main="Actual Vs Fitted Plot",col="blue")
+
+abline(a=0, b=1, col="red")
+
+```
+
+
+```{r}
+
+plot(model_1$fitted.values,model_1$residuals,xlab="fitted Values",
+     ylab="Residuals",main="Residual Vs Fitted Plot",col="blue")
+
+abline(h=0,col="red",lty=2)
+```
+
+## Probable Model Inefficiency Reasons:
+
+From the actual vs predicted plot, it is seen that the following are violated:
+
+* The distribution is *non linear*, which means the predicted values are biased by a specific independent variable.
+
+* *There could be multicollinearity*, since there is *HIGHBP* variable that has a threshold value, and is a derived column, so that directly influences bloodpressure, thereby suppressing the contribution of other variables.
+
+* The model might have been overfitted, leading to outcomes that are unreliable
+
+
+## Fitting the Model again
+
+
+### Removing Residuals from Cholesterol
+
+If there are extreme values, the maximum value is assigned to it. If there are lower values, the minimum value is assigned to it.
+
+```{r}
+
+library(dplyr)
+
+upper_chol<-max(data$Cholesterol)
+lower_chol<-min(data$Cholesterol)
+
+
+data_numeric<- mutate(data_numeric,
+Cholesterol_1 = ifelse(Cholesterol>upper_chol, upper_chol, ifelse(Cholesterol<lower_chol,lower_chol,Cholesterol)))
+
+head(data_numeric)
+
+```
+
+
+Dropping the HighBP variable are including the next positive correlated variable 'Gender', and adding former smoker variable, and removing smoker since it has a better correlation, shows a relationship (negative) with blood pressure than smoker.
+
+
+
+```{r}
+
+model_2 <-lm(data_numeric$BloodPressure ~ data_numeric$Diabetes+
+             data_numeric$HeartDisease+
+             data_numeric$Former_Smoker+ 
+             data_numeric$Cholesterol_1+
+             data_numeric$Gender+
+               data_numeric$Age,
+           data=data_numeric) 
+summary(model_2)
+```
+
+## Q_2.2.2 Interpretation of Model Summary
+
+The estimated parameters are the coefficients of each of the independent variable that could influence the predictor/dependent variable.
+
+* Here the intercept has the coefficient of 123.610008
+* Diabetes : 1.722012    
+* HeartDisease : 1.052656   
+* Former_Smoker : -2.363243   
+* Cholesterol : -0.021191   
+* Gender : 0.727431   
+* Age : 0.003792
+
+According to the significance level, it is noted that the variable Former smoker has a p value less than 0.05 which indicates a good significance level associated with the variable.
+
+The intercept has a 3 star (p value less than 0.001) with high significance in contributing to the predictor.
+
+From the health outcome perspective, the variables former smoker is most contributing to the values of blood pressure. In other terms, the probability of having another variable with the absence of former smoker is 0.001.
+
+The model has an R square value of 0.0105, which isn't a great performing model.
+
+
+
+## Q_2.2.3 Assesing the model using plots
+
+
+```{r}
+
+pred <-predict(model_2)
+plot(data_numeric$BloodPressure,pred,xlab="Actual Values",
+     ylab="Predicted Values",main="Actual Vs Fitted Plot",col="blue")
+
+abline(a=0, b=1, col="red")
+
+```
+
+
+
+```{r}
+
+plot(model_2$fitted.values,model_1$residuals,xlab="fitted Values",
+     ylab="Residuals",main="Residual Vs Fitted Plot",col="blue")
+
+abline(h=0,col="red",lty=2)
+```
+
+From the fitted vs actual graph, it is seen that the regression line is passing through the data in such a way that it isn't capturing much of the data. 
+
+The residuals = (actual-predicted), are plotted vs the predicted values.
+
+It is noted that the residuals are spread and scattered around the line, indicating that it is capturing the relationship well.
+
+It could also be inferred that there is no overfitting in the model and no multicollinearity.
+
+There is a linearity in the model.
+
+
+
+## Model Evaluation and Hypothesis Testing
+
+## Q_2.3.1 Hypothesis Testing 
+
+Plotting quantiles to check if residuals are normally. If not, they could affect the hypothesis tests, which are actually based on the residuals.(t values)
+
+```{r}
+
+qqnorm(model_2$residuals)
+qqline(model_2$residuals)
+
+
+```
+
+It is noted that the residuals are normally distributed.
+
+```{r}
+library(tinytex)
+```
+
+
+Let the chosen variable be Former Smoker, whose coefficient is indicated by b_3.
+
+$$H_0 : b_3=0 \\ H_1 : b_3\neq0$$
+
+The null hypothesis states that predictor coefficient is zero, and there is no relationship with the predictor and the target.
+
+The alternate hypothesis states that there is a effect on target by this predictor.
+
+
+```{r}
+
+hypothesis<-summary(model_2)$coefficients["data_numeric$Former_Smoker",
+                                          c("t value","Pr(>|t|)")]
+hypothesis
+```
+
+
+```{r}
+#Setting the alpha/significance level as 0.05
+
+sig_level<-0.05
+
+if(hypothesis['Pr(>|t|)']<sig_level)
+{
+  print("Reject the null hypothesis")
+}else
+{
+  print("Do not reject the null hypothesis")
+}
+
+```
+Since, the p value is less than the significance level, we reject the null hypothesis. The alternate hypothesis is accepted, therefore there is a relationship between the predictor and the target.
+
+
+## Type 1 Error: (False Positive)
+
+In this case the true null hypothesis is rejected, where actually, there is a no relationship between former_smoker and blood pressure.
+
+The result of which could be faulty inclusion of the variable in the model, assuming that there is a relationship, where there is actually no relation. 
+
+This could affect the linearity of the model.
+
+
+## Type 2 Error: (False Negative)
+
+In this case, the null hypothesis is accepted, when there is actually a relationship between the predictor and the target.
+
+In this case, we ignore the presence of the predictor and the way it could have helped in the  prediction of target. 
+
+
+## Q_2.3.2 Assesing the Overall Fit 
+
+* The bloodpressure variable(target), was attempted to be explained by the independent variables heartdisease, diabetes, age, gender, cholesterol and former_smoker 
+
+* According to the model's residual vs fitted values plot, it is noted that the model has only partially captured the data. The linear pattern is not well studied, with many data points uncaptured, hence has a low R square ratio.
+
+* However, from the residual plot, it is interpreted that the model has no over fitting, has homoskedascity throughout (similiar variance for all predictors). It also implies there is a linear relationship.
+
+* Among the variables that contribute to the target variable, the variable former_smoker has more significance than the other variables.
+
+* The Multiple R square value is 0.0105, and the maximum residual value is 56.585 and minimum residual value is -56.174.
+
+* The residuals follow a normal distribution
+
+* With R square of 0.0105, the model could explain only around 1.05 percent of the variation in the target variable
+
+
+## Q_2.3.3 Plotting the residuals back to the model
+
+
+```{r}
+
+model_residual <-lm(data_numeric$BloodPressure ~ model_2$residuals)
+
+summary(model_residual)
+
+```
+
+
+## Fitting the actual vs Predicted for the residual fitted model.
+
+```{r}
+
+pred <-predict(model_residual)
+plot(data_numeric$BloodPressure,pred,xlab="Actual Values",
+     ylab="Predicted Values",main="Actual Vs Fitted Plot",col="blue")
+
+abline(a=0, b=1, col="red")
+
+```
+
+* If the residuals are plotted to the model, the model generally captures the error terms and generally performs well.
+
+* Since it captures the model differences between actuals and predicted, it tends to **overfit**
+
+* The model has a R square of 0.98 which actually explain 98 percent of the changes in the target variable. This implies overfitting of the model
+
+* If the model is exposed to unseen data, it is unlikely that the model would give the same good performance.
+
+
+## Q_3.Fun with Linear Model
+
+```{r}
+
+n <- 100
+p <- 95
+x <- rnorm(n*p)
+dim(x) <-c(n,p)
+y <- x[,1] - 1.2*x[,2] + rnorm(n)
+fit.lm = lm(y ~ x)
+```
+
+
+
+## What is this code doing? What is the Purpose?
+
+n is the number of rows
+p is the number of columns
+
+X is a data set of normal distribution, with n rows and p columns.
+
+The dimensions of the data set x are set to 100 rows and 95 columns.
+
+Then, a vector Y is created by the following computation:
+
+1.2 times of second column of X is subtracted from the first column. Then added with a linear combination of random normal numbers of size 100, which is equal to the rows.
+
+The random distributed values in the dataset X, entirely is used to predict the variable Y which has a sum of different set of random variable and a difference between the existing columns of X.
+
+The purpose of this linear model is to predict a variable Y which is a combination of already existing columns and a sum random normal distribution.
+
+
+## Interpret the output fit.lm in light of the input you created. Is it what you expected; why or why not?
+
+
+```{r}
+
+pred_norm <-predict(fit.lm)
+plot(y,pred_norm,xlab="Actual Values",ylab="Predicted Values",main="Actual Vs Fitted Plot",col="blue")
+
+abline(a=0, b=1, col="red")
+
+
+```
+
+The ideal output of the model has to be normally distributed too, and should be able to accurately predict the variable Y.
+
+The expected output of the model is a normal distribution since the target variable y is a combination of normally distributed variables. 
+
+
+
+```{r}
+
+summ <- summary(fit.lm)
+print(summ$r.squared)
+```
+
+The predictions of this model is quite accurate.
+
+
+## Why do you think this question might have been called “fun”?
+
+This could have been called fun because the variable creation Y (dependent variable) was done using X's two variables, and then added a random list of numbers to it, and this variable was taken as a target.
+
+Also, it is fun as the rnorm() function generates a new set of random variables everytime the model is run. Also, the values of Y is different everytime it is executed.
+

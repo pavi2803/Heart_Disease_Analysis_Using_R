@@ -7,4 +7,5 @@ This analysis consists of estimating factors influencing the presence of heart d
 
 <img width="536" alt="image" src="https://github.com/user-attachments/assets/be1d076b-3214-49c2-aaf4-3ff74c1bd046">
 
-![Uploading image.png…]()
+<img width="364" alt="image" src="https://github.com/user-attachments/assets/7c5fea95-3f8c-439d-8f4b-53f2b15ceefe">
+
